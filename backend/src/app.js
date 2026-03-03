@@ -57,7 +57,11 @@ app.use(cookieParser());
 
 // Health check
 app.get("/health", (req, res) => {
-  res.json({ status: "ok" });
+  res.json({
+    code: 200,
+    message: "Service is healthy",
+    data: { status: "ok" },
+  });
 });
 
 // API routes

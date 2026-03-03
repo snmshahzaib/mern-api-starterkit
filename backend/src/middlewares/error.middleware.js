@@ -37,6 +37,7 @@ export function errorHandler(err, req, res, next) {
   const response = {
     code: statusCode,
     message,
+    data: null,
     ...(errors?.length ? { errors } : {}),
     ...(env.NODE_ENV === "development" && { stack: normalizedError.stack }),
   };

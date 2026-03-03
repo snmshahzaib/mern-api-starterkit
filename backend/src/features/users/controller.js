@@ -26,5 +26,5 @@ export const updateUserHandler = asyncHandler(async (req, res) => {
 
 export const deleteUserHandler = asyncHandler(async (req, res) => {
   await deleteUser(req.params.id);
-  return res.status(httpStatus.NO_CONTENT).send();
+  return sendResponse(res, httpStatus.OK, null, "User deleted successfully");
 });
