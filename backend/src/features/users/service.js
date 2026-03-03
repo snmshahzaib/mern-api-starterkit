@@ -3,15 +3,29 @@ import httpStatus from "http-status";
 import { User } from "./model.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { getPagination } from "../../utils/pagination.js";
+import { toPublicUser } from "./user.mapper.js";
 
-export async function createUser(data) {
-  const existing = await User.findOne({ email: data.email.toLowerCase() });
+async function assertEmailUnique(email, excludeId = null) {
+  if (!email) {
+    return;
+  }
+
+  const normalizedEmail = email.toLowerCase();
+  const existing = await User.findOne({
+    email: normalizedEmail,
+    ...(excludeId && { _id: { $ne: excludeId } }),
+  }).lean();
+
   if (existing) {
     throw new ApiError(httpStatus.CONFLICT, "Email already in use");
   }
+}
 
+export async function createUser(data) {
+  await assertEmailUnique(data.email);
   const user = await User.create(data);
-  return user.toObject({ versionKey: false });
+
+  return toPublicUser(user);
 }
 
 export async function getUsers(query) {
@@ -57,25 +71,26 @@ export async function getUserById(id) {
   return user;
 }
 
-export async function updateUser(id, data) {
+export async function updateUser(id, data, currentUser) {
   const user = await User.findById(id);
   if (!user) {
     throw new ApiError(httpStatus.NOT_FOUND, "User not found");
   }
 
+  const isAdmin = currentUser.role === "admin";
+  if (!isAdmin) {
+    delete data.role;
+    delete data.isActive;
+  }
+
   if (data.email && data.email.toLowerCase() !== user.email) {
-    const existing = await User.findOne({ email: data.email.toLowerCase(), _id: { $ne: id } });
-    if (existing) {
-      throw new ApiError(httpStatus.CONFLICT, "Email already in use");
-    }
+    await assertEmailUnique(data.email, id);
   }
 
   Object.assign(user, data);
   await user.save();
 
-  const plain = user.toObject();
-  delete plain.password;
-  return plain;
+  return toPublicUser(user);
 }
 
 export async function deleteUser(id) {
@@ -86,4 +101,3 @@ export async function deleteUser(id) {
 
   await user.deleteOne();
 }
-

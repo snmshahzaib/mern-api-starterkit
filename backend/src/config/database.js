@@ -7,7 +7,13 @@ export async function connectDB() {
   try {
     mongoose.set("strictQuery", true);
 
-    await mongoose.connect(env.MONGODB_URI);
+    await mongoose.connect(env.MONGODB_URI, {
+      autoIndex: env.NODE_ENV !== "production",
+    });
+
+    mongoose.connection.on("error", (error) => {
+      logger.error("MongoDB runtime error", { error: error.message });
+    });
 
     logger.info("Connected to MongoDB");
   } catch (error) {
@@ -15,4 +21,3 @@ export async function connectDB() {
     throw error;
   }
 }
-

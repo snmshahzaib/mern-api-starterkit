@@ -1,35 +1,20 @@
 import httpStatus from "http-status";
 
 import { login, register, getProfile } from "./service.js";
-import { ApiResponse } from "../../utils/ApiResponse.js";
+import { asyncHandler } from "../../utils/asyncHandler.js";
+import { sendResponse } from "../../utils/sendResponse.js";
 
-export async function registerHandler(req, res, next) {
-  try {
-    const result = await register(req.body);
-    const response = new ApiResponse(httpStatus.CREATED, result, "User registered successfully");
-    res.status(httpStatus.CREATED).json(response);
-  } catch (error) {
-    next(error);
-  }
-}
+export const registerHandler = asyncHandler(async (req, res) => {
+  const result = await register(req.body);
+  return sendResponse(res, httpStatus.CREATED, result, "User registered successfully");
+});
 
-export async function loginHandler(req, res, next) {
-  try {
-    const result = await login(req.body);
-    const response = new ApiResponse(httpStatus.OK, result, "Logged in successfully");
-    res.status(httpStatus.OK).json(response);
-  } catch (error) {
-    next(error);
-  }
-}
+export const loginHandler = asyncHandler(async (req, res) => {
+  const result = await login(req.body);
+  return sendResponse(res, httpStatus.OK, result, "Logged in successfully");
+});
 
-export async function meHandler(req, res, next) {
-  try {
-    const user = await getProfile(req.user.id);
-    const response = new ApiResponse(httpStatus.OK, user, "Profile fetched successfully");
-    res.status(httpStatus.OK).json(response);
-  } catch (error) {
-    next(error);
-  }
-}
-
+export const meHandler = asyncHandler(async (req, res) => {
+  const user = await getProfile(req.user._id);
+  return sendResponse(res, httpStatus.OK, user, "Profile fetched successfully");
+});

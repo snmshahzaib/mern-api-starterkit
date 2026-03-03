@@ -35,6 +35,13 @@ const userSchema = new mongoose.Schema(
   },
   {
     timestamps: true,
+    toJSON: {
+      transform(_doc, ret) {
+        delete ret.password;
+        delete ret.__v;
+        return ret;
+      },
+    },
   },
 );
 
@@ -48,9 +55,21 @@ userSchema.pre("save", async function hashPassword(next) {
   return next();
 });
 
+userSchema.pre("findOneAndUpdate", async function hashPasswordOnUpdate(next) {
+  const update = this.getUpdate() || {};
+
+  if (!update.password) {
+    return next();
+  }
+
+  const salt = await bcrypt.genSalt(10);
+  update.password = await bcrypt.hash(update.password, salt);
+  this.setUpdate(update);
+  return next();
+});
+
 userSchema.methods.comparePassword = async function comparePassword(candidatePassword) {
   return bcrypt.compare(candidatePassword, this.password);
 };
 
 export const User = mongoose.model("User", userSchema);
-

@@ -1,15 +1,9 @@
 import httpStatus from "http-status";
-import jwt from "jsonwebtoken";
 
 import { User } from "../users/model.js";
 import { ApiError } from "../../utils/ApiError.js";
-import { env } from "../../config/env.js";
-
-function signToken(userId) {
-  return jwt.sign({ id: userId }, env.JWT_SECRET, {
-    expiresIn: env.JWT_EXPIRES_IN,
-  });
-}
+import { toPublicUser } from "../users/user.mapper.js";
+import { signAccessToken } from "../../utils/token.js";
 
 export async function register(data) {
   const existing = await User.findOne({ email: data.email.toLowerCase() });
@@ -18,12 +12,9 @@ export async function register(data) {
   }
 
   const user = await User.create(data);
-  const token = signToken(user.id);
+  const token = signAccessToken(user.id);
 
-  const plain = user.toObject();
-  delete plain.password;
-
-  return { user: plain, token };
+  return { user: toPublicUser(user), token };
 }
 
 export async function login({ email, password }) {
@@ -38,11 +29,9 @@ export async function login({ email, password }) {
     throw new ApiError(httpStatus.UNAUTHORIZED, "Invalid email or password");
   }
 
-  const token = signToken(user.id);
-  const plain = user.toObject();
-  delete plain.password;
+  const token = signAccessToken(user.id);
 
-  return { user: plain, token };
+  return { user: toPublicUser(user), token };
 }
 
 export async function getProfile(userId) {
@@ -54,4 +43,3 @@ export async function getProfile(userId) {
 
   return user;
 }
-

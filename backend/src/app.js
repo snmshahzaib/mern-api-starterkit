@@ -8,8 +8,11 @@ import { logger } from "./config/logger.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import { notFoundHandler } from "./middlewares/notfound.middleware.js";
 import routes from "./routes.js";
+import { ApiError } from "./utils/ApiError.js";
 
 const app = express();
+app.disable("x-powered-by");
+app.set("trust proxy", 1);
 
 // Security headers
 app.use(helmet());
@@ -17,7 +20,13 @@ app.use(helmet());
 // CORS
 app.use(
   cors({
-    origin: env.CORS_ORIGIN,
+    origin(origin, callback) {
+      if (!origin || env.CORS_ORIGINS.includes(origin)) {
+        return callback(null, true);
+      }
+
+      return callback(new ApiError(403, "Not allowed by CORS"));
+    },
     credentials: true,
   }),
 );
@@ -42,7 +51,7 @@ if (env.NODE_ENV !== "test") {
 }
 
 // Body parsers
-app.use(express.json());
+app.use(express.json({ limit: "10kb" }));
 app.use(express.urlencoded({ extended: true }));
 app.use(cookieParser());
 
@@ -61,4 +70,3 @@ app.use(notFoundHandler);
 app.use(errorHandler);
 
 export default app;
-

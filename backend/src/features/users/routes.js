@@ -1,6 +1,12 @@
 import express from "express";
 
 import {
+  authorizeRoles,
+  authorizeSelfOrAdmin,
+  authRequired,
+} from "../../middlewares/auth.middleware.js";
+import { validate } from "../../middlewares/validate.middleware.js";
+import {
   createUserHandler,
   deleteUserHandler,
   getUserByIdHandler,
@@ -14,27 +20,24 @@ import {
   getUsersSchema,
   updateUserSchema,
 } from "./validation.js";
-import { validate } from "../../middlewares/validate.middleware.js";
-import { authRequired } from "../../middlewares/auth.middleware.js";
 
 const router = express.Router();
 
-// All user CRUD routes require authentication.
+router.use(authRequired);
 
 // POST /api/users
-router.post("/", authRequired, validate(createUserSchema), createUserHandler);
+router.post("/", authorizeRoles("admin"), validate(createUserSchema), createUserHandler);
 
 // GET /api/users
-router.get("/", authRequired, validate(getUsersSchema), getUsersHandler);
+router.get("/", authorizeRoles("admin"), validate(getUsersSchema), getUsersHandler);
 
 // GET /api/users/:id
-router.get("/:id", authRequired, validate(getUserByIdSchema), getUserByIdHandler);
+router.get("/:id", validate(getUserByIdSchema), authorizeSelfOrAdmin("id"), getUserByIdHandler);
 
 // PATCH /api/users/:id
-router.patch("/:id", authRequired, validate(updateUserSchema), updateUserHandler);
+router.patch("/:id", validate(updateUserSchema), authorizeSelfOrAdmin("id"), updateUserHandler);
 
 // DELETE /api/users/:id
-router.delete("/:id", authRequired, validate(deleteUserSchema), deleteUserHandler);
+router.delete("/:id", validate(deleteUserSchema), authorizeRoles("admin"), deleteUserHandler);
 
 export default router;
-
