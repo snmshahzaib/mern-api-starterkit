@@ -1,0 +1,41 @@
+backend/
+│
+├── src/
+│   ├── app.js
+│   ├── server.js
+│   │
+│   ├── config/
+│   │   ├── database.js
+│   │   ├── env.js
+│   │   └── logger.js
+│   │
+│   ├── features/
+│   │   ├── auth/
+│   │   │   ├── controller.js
+│   │   │   ├── service.js
+│   │   │   ├── routes.js
+│   │   │   ├── validation.js
+│   │   │   └── model.js
+│   │   │
+│   │   ├── users/
+│   │   │   ├── controller.js
+│   │   │   ├── service.js
+│   │   │   ├── routes.js
+│   │   │   ├── validation.js
+│   │   │   └── model.js
+│   │
+│   ├── middlewares/
+│   │   ├── auth.middleware.js
+│   │   ├── error.middleware.js
+│   │   └── validate.middleware.js
+│   │
+│   ├── utils/
+│   │   ├── ApiError.js
+│   │   ├── ApiResponse.js
+│   │   └── pagination.js
+│   │
+│   └── routes.js
+│
+├── tests/
+├── .env
+└── package.json
