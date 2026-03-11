@@ -4,15 +4,29 @@ import { loginHandler, meHandler, registerHandler } from "./controller.js";
 import { loginSchema, registerSchema } from "./validation.js";
 import { validate } from "../../middlewares/validate.middleware.js";
 import { authRequired } from "../../middlewares/auth.middleware.js";
+import { createRateLimiter } from "../../middlewares/rateLimit.middleware.js";
 
-const router = express.Router();
+export function createAuthRouter(options = {}) {
+  const router = express.Router();
 
-// Public: register & login
-router.post("/register", validate(registerSchema), registerHandler);
-router.post("/login", validate(loginSchema), loginHandler);
+  const handlers = options.handlers || { registerHandler, loginHandler, meHandler };
+  const authMiddleware = options.authRequired || authRequired;
+  const authLimiter =
+    options.authLimiter ||
+    createRateLimiter({
+      windowMs: 15 * 60 * 1000,
+      max: 20,
+      message: "Too many auth attempts, please try again later",
+    });
 
-// Authenticated: get current user profile
-router.get("/me", authRequired, meHandler);
+  // Public: register & login (rate-limited)
+  router.post("/register", authLimiter, validate(registerSchema), handlers.registerHandler);
+  router.post("/login", authLimiter, validate(loginSchema), handlers.loginHandler);
 
-export default router;
+  // Authenticated: get current user profile
+  router.get("/me", authMiddleware, handlers.meHandler);
 
+  return router;
+}
+
+export default createAuthRouter();

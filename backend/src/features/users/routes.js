@@ -21,23 +21,60 @@ import {
   updateUserSchema,
 } from "./validation.js";
 
-const router = express.Router();
+export function createUsersRouter(options = {}) {
+  const userRouter = express.Router();
 
-router.use(authRequired);
+  const handlers =
+    options.handlers || {
+      createUserHandler,
+      deleteUserHandler,
+      getUserByIdHandler,
+      getUsersHandler,
+      updateUserHandler,
+    };
 
-// POST /api/users
-router.post("/", authorizeRoles("admin"), validate(createUserSchema), createUserHandler);
+  const authMiddleware = options.authRequired || authRequired;
+  const authorizeRolesMiddleware = options.authorizeRoles || authorizeRoles;
+  const authorizeSelfOrAdminMiddleware = options.authorizeSelfOrAdmin || authorizeSelfOrAdmin;
 
-// GET /api/users
-router.get("/", authorizeRoles("admin"), validate(getUsersSchema), getUsersHandler);
+  userRouter.use(authMiddleware);
 
-// GET /api/users/:id
-router.get("/:id", validate(getUserByIdSchema), authorizeSelfOrAdmin("id"), getUserByIdHandler);
+  // POST /api/users
+  userRouter.post(
+    "/",
+    authorizeRolesMiddleware("admin"),
+    validate(createUserSchema),
+    handlers.createUserHandler,
+  );
 
-// PATCH /api/users/:id
-router.patch("/:id", validate(updateUserSchema), authorizeSelfOrAdmin("id"), updateUserHandler);
+  // GET /api/users
+  userRouter.get("/", authorizeRolesMiddleware("admin"), validate(getUsersSchema), handlers.getUsersHandler);
 
-// DELETE /api/users/:id
-router.delete("/:id", validate(deleteUserSchema), authorizeRoles("admin"), deleteUserHandler);
+  // GET /api/users/:id
+  userRouter.get(
+    "/:id",
+    validate(getUserByIdSchema),
+    authorizeSelfOrAdminMiddleware("id"),
+    handlers.getUserByIdHandler,
+  );
 
-export default router;
+  // PATCH /api/users/:id
+  userRouter.patch(
+    "/:id",
+    validate(updateUserSchema),
+    authorizeSelfOrAdminMiddleware("id"),
+    handlers.updateUserHandler,
+  );
+
+  // DELETE /api/users/:id
+  userRouter.delete(
+    "/:id",
+    validate(deleteUserSchema),
+    authorizeRolesMiddleware("admin"),
+    handlers.deleteUserHandler,
+  );
+
+  return userRouter;
+}
+
+export default createUsersRouter();
