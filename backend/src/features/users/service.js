@@ -4,22 +4,7 @@ import { User } from "./model.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { getPagination } from "../../utils/pagination.js";
 import { toPublicUser } from "./user.mapper.js";
-
-async function assertEmailUnique(email, excludeId = null) {
-  if (!email) {
-    return;
-  }
-
-  const normalizedEmail = email.toLowerCase();
-  const existing = await User.findOne({
-    email: normalizedEmail,
-    ...(excludeId && { _id: { $ne: excludeId } }),
-  }).lean();
-
-  if (existing) {
-    throw new ApiError(httpStatus.CONFLICT, "Email already in use");
-  }
-}
+import { assertEmailUnique, normalizeEmail } from "./user.email.js";
 
 export async function createUser(data) {
   await assertEmailUnique(data.email);
@@ -39,7 +24,11 @@ export async function getUsers(query) {
   }
 
   if (query.isActive !== undefined) {
-    filter.isActive = query.isActive === "true";
+    if (typeof query.isActive === "boolean") {
+      filter.isActive = query.isActive;
+    } else {
+      filter.isActive = String(query.isActive).toLowerCase() === "true";
+    }
   }
 
   const [items, total] = await Promise.all([
@@ -83,8 +72,8 @@ export async function updateUser(id, data, currentUser) {
     delete data.isActive;
   }
 
-  if (data.email && data.email.toLowerCase() !== user.email) {
-    await assertEmailUnique(data.email, id);
+  if (data.email && normalizeEmail(data.email) !== user.email) {
+    await assertEmailUnique(data.email, user.id);
   }
 
   Object.assign(user, data);

@@ -4,12 +4,10 @@ import { User } from "../users/model.js";
 import { ApiError } from "../../utils/ApiError.js";
 import { toPublicUser } from "../users/user.mapper.js";
 import { signAccessToken } from "../../utils/token.js";
+import { assertEmailUnique, normalizeEmail } from "../users/user.email.js";
 
 export async function register(data) {
-  const existing = await User.findOne({ email: data.email.toLowerCase() });
-  if (existing) {
-    throw new ApiError(httpStatus.CONFLICT, "Email already in use");
-  }
+  await assertEmailUnique(data.email);
 
   const user = await User.create(data);
   const token = signAccessToken(user.id);
@@ -18,7 +16,7 @@ export async function register(data) {
 }
 
 export async function login({ email, password }) {
-  const user = await User.findOne({ email: email.toLowerCase() }).select("+password");
+  const user = await User.findOne({ email: normalizeEmail(email) }).select("+password");
 
   if (!user) {
     throw new ApiError(httpStatus.UNAUTHORIZED, "Invalid email or password");
