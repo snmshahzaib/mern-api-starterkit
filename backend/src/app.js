@@ -8,6 +8,7 @@ import mongoSanitize from "express-mongo-sanitize";
 
 import { env } from "./config/env.js";
 import { logger } from "./config/logger.js";
+import { getRedisClient } from "./config/redis.js";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import { notFoundHandler } from "./middlewares/notfound.middleware.js";
 import routes from "./routes.js";
@@ -77,9 +78,15 @@ app.use(cookieParser());
 app.use(
   "/api",
   createRateLimiter({
+    prefix: "api",
+    store: env.RATE_LIMIT_STORE,
+    getRedisClient,
     windowMs: env.API_RATE_LIMIT_WINDOW_MS,
     max: env.API_RATE_LIMIT_MAX,
     message: "Too many requests, please try again later",
+    onStoreError(error) {
+      logger.error("Rate limit store error", { error: error.message });
+    },
   }),
 );
 

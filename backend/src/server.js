@@ -5,6 +5,7 @@ import app from "./app.js";
 import { connectDB } from "./config/database.js";
 import { env } from "./config/env.js";
 import { logger } from "./config/logger.js";
+import { connectRedis, disconnectRedis, isRedisEnabled } from "./config/redis.js";
 
 const PORT = env.PORT;
 let server;
@@ -16,6 +17,7 @@ async function shutdown(signal) {
     server.close(async () => {
       try {
         await mongoose.connection.close();
+        await disconnectRedis();
         logger.info("Server and MongoDB connection closed");
         process.exit(0);
       } catch (error) {
@@ -24,12 +26,16 @@ async function shutdown(signal) {
       }
     });
   } else {
+    await disconnectRedis();
     process.exit(0);
   }
 }
 
 async function startServer() {
   try {
+    if (isRedisEnabled()) {
+      await connectRedis();
+    }
     await connectDB();
 
     server = http.createServer(app);
@@ -39,6 +45,7 @@ async function startServer() {
     });
   } catch (error) {
     logger.error("Failed to start server", { error: error.message });
+    await disconnectRedis();
     process.exit(1);
   }
 }

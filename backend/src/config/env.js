@@ -34,6 +34,8 @@ const envSchema = Joi.object({
   LOG_LEVEL: Joi.string()
     .valid("error", "warn", "info", "http", "verbose", "debug", "silly")
     .default("info"),
+  RATE_LIMIT_STORE: Joi.string().valid("auto", "memory", "redis").default("auto"),
+  REDIS_URL: Joi.string().allow("").default(""),
   API_RATE_LIMIT_WINDOW_MS: Joi.number().integer().min(1000).default(15 * 60 * 1000),
   API_RATE_LIMIT_MAX: Joi.number().integer().min(1).default(300),
   AUTH_RATE_LIMIT_WINDOW_MS: Joi.number().integer().min(1000).default(15 * 60 * 1000),
@@ -62,6 +64,17 @@ if (value.NODE_ENV === "production" && value.JWT_SECRET === "change_me_in_produc
   throw new Error("JWT_SECRET must be changed in production");
 }
 
+const resolvedRateLimitStore =
+  value.RATE_LIMIT_STORE === "auto"
+    ? value.NODE_ENV === "production"
+      ? "redis"
+      : "memory"
+    : value.RATE_LIMIT_STORE;
+
+if (resolvedRateLimitStore === "redis" && !value.REDIS_URL) {
+  throw new Error("REDIS_URL is required when RATE_LIMIT_STORE=redis (or in production when RATE_LIMIT_STORE=auto)");
+}
+
 const corsOrigins = value.CORS_ORIGIN.split(",")
   .map((origin) => origin.trim())
   .filter(Boolean);
@@ -72,6 +85,8 @@ export const env = {
   TRUST_PROXY: parseTrustProxy(value.TRUST_PROXY),
   JSON_BODY_LIMIT: value.JSON_BODY_LIMIT,
   LOG_LEVEL: value.LOG_LEVEL,
+  RATE_LIMIT_STORE: resolvedRateLimitStore,
+  REDIS_URL: value.REDIS_URL,
   API_RATE_LIMIT_WINDOW_MS: value.API_RATE_LIMIT_WINDOW_MS,
   API_RATE_LIMIT_MAX: value.API_RATE_LIMIT_MAX,
   AUTH_RATE_LIMIT_WINDOW_MS: value.AUTH_RATE_LIMIT_WINDOW_MS,
