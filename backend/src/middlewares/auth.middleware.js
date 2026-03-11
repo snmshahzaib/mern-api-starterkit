@@ -31,6 +31,10 @@ export async function authRequired(req, res, next) {
       throw new ApiError(httpStatus.UNAUTHORIZED, "User not found");
     }
 
+    if (user.isActive === false) {
+      throw new ApiError(httpStatus.FORBIDDEN, "Account is disabled");
+    }
+
     req.user = user;
     next();
   } catch (error) {

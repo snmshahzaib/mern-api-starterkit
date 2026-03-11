@@ -30,6 +30,7 @@ export function errorHandler(err, req, res, next) {
   if (env.NODE_ENV !== "test") {
     logger.error(normalizedError.message, {
       statusCode,
+      requestId: req.id,
       stack: normalizedError.stack,
     });
   }
@@ -37,6 +38,7 @@ export function errorHandler(err, req, res, next) {
   const response = {
     code: statusCode,
     message,
+    requestId: req.id,
     data: null,
     ...(errors?.length ? { errors } : {}),
     ...(env.NODE_ENV === "development" && { stack: normalizedError.stack }),

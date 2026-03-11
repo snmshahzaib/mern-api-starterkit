@@ -5,6 +5,7 @@ import { loginSchema, registerSchema } from "./validation.js";
 import { validate } from "../../middlewares/validate.middleware.js";
 import { authRequired } from "../../middlewares/auth.middleware.js";
 import { createRateLimiter } from "../../middlewares/rateLimit.middleware.js";
+import { env } from "../../config/env.js";
 
 export function createAuthRouter(options = {}) {
   const router = express.Router();
@@ -14,8 +15,8 @@ export function createAuthRouter(options = {}) {
   const authLimiter =
     options.authLimiter ||
     createRateLimiter({
-      windowMs: 15 * 60 * 1000,
-      max: 20,
+      windowMs: env.AUTH_RATE_LIMIT_WINDOW_MS,
+      max: env.AUTH_RATE_LIMIT_MAX,
       message: "Too many auth attempts, please try again later",
     });
 

@@ -1,5 +1,7 @@
 import winston from "winston";
 
+import { env } from "./env.js";
+
 const { combine, timestamp, printf, colorize } = winston.format;
 
 const logFormat = printf(({ level, message, timestamp: ts, ...meta }) => {
@@ -8,7 +10,8 @@ const logFormat = printf(({ level, message, timestamp: ts, ...meta }) => {
 });
 
 export const logger = winston.createLogger({
-  level: "info",
+  level: env.LOG_LEVEL,
+  silent: env.NODE_ENV === "test",
   format: combine(timestamp(), logFormat),
   transports: [
     new winston.transports.Console({
@@ -16,4 +19,3 @@ export const logger = winston.createLogger({
     }),
   ],
 });
-
